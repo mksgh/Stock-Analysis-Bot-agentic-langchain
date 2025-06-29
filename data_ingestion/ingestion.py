@@ -8,7 +8,7 @@ from langchain_core.documents import Document
 from langchain_community.document_loaders import PyPDFLoader, Docx2txtLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_pinecone import PineconeVectorStore
-from utils.model_loaders import ModelLoader
+from utils.model_loader import ModelLoader
 from utils.config_loader import load_config
 from pinecone import ServerlessSpec, Pinecone
 from uuid import uuid4
@@ -34,7 +34,8 @@ class DataIngestion:
         Splits documents and stores them in the Pinecone vector database.
 
     run_pipeline(uploaded_files):
-        Runs the full ingestion pipeline: loads documents and stores them in the vector DB.
+        Executes the complete data ingestion pipeline: loads and parses uploaded files,
+        splits them into chunks, and stores them in the Pinecone vector database.
     """
 
     def __init__(self) -> None:
@@ -59,7 +60,9 @@ class DataIngestion:
 
             required_vars = [
                 "GOOGLE_API_KEY",
-                "PINECONE_API_KEY"
+                "PINECONE_API_KEY",
+                "AZURE_OPENAI_API_KEY",
+                "AZURE_OPENAI_ENDPOINT",
             ]
 
             missing_vars = [var for var in required_vars if not os.getenv(var)]
@@ -68,6 +71,9 @@ class DataIngestion:
 
             self.google_api_key: str = os.getenv("GOOGLE_API_KEY")
             self.pinecone_api_key: str = os.getenv("PINECONE_API_KEY")
+            os.environ["AZURE_OPENAI_API_KEY"] = os.getenv("AZURE_OPENAI_API_KEY")  # type: ignore
+            os.environ["AZURE_OPENAI_ENDPOINT"] = os.getenv("AZURE_OPENAI_ENDPOINT")  # type: ignore
+
         except Exception as e:
             raise CustomException(e, sys)
 
@@ -125,18 +131,32 @@ class DataIngestion:
             documents = text_splitter.split_documents(documents)
 
             pinecone_client: Pinecone = Pinecone(api_key=self.pinecone_api_key)
-            index_name: str = self.config["vector_db"]["index_name"]
+            model_provider: str = self.config["model_provider"]["provider"]
+
+            if model_provider == "azure":
+                index_name: str = self.config["vector_db"]["azure"]["index_name"]
+                embedding_dimension: int = self.config["vector_db"]["azure"]["dimension"]
+
+            elif model_provider == "google":
+                index_name: str = self.config["vector_db"]["groq"]["index_name"]
+                embedding_dimension: int = self.config["vector_db"]["groq"]["dimension"]
+
+            elif model_provider == "groq":
+                index_name: str = self.config["vector_db"]["groq"]["index_name"]
+                embedding_dimension: int = self.config["vector_db"]["groq"]["dimension"]
+            
 
             if index_name not in [i.name for i in pinecone_client.list_indexes()]:
                 pinecone_client.create_index(
                     name=index_name,
-                    dimension=self.config["vector_db"]["dimension"],  # adjust if needed based on embedding model
+                    dimension=embedding_dimension,  # adjust if needed based on embedding model
                     metric="cosine",
                     spec=ServerlessSpec(cloud="aws", region="us-east-1"),
                 )
 
             index = pinecone_client.Index(index_name)
-            vector_store: PineconeVectorStore = PineconeVectorStore(index=index, embedding=self.model_loader.load_embeddings())
+            vector_store: PineconeVectorStore = PineconeVectorStore(index=index, 
+                                                                    embedding=self.model_loader.load_embeddings())
             uuids: List[str] = [str(uuid4()) for _ in range(len(documents))]
 
             vector_store.add_documents(documents=documents, ids=uuids)
@@ -145,12 +165,18 @@ class DataIngestion:
 
     def run_pipeline(self, uploaded_files: List[Any]) -> None:
         """
-        Runs the full ingestion pipeline: loads documents and stores them in the vector database.
+        Executes the complete data ingestion pipeline: loads and parses uploaded files,
+        splits them into chunks, and stores them in the Pinecone vector database.
 
         Parameters
         ----------
-        uploaded_files : list
-            List of uploaded file objects.
+        uploaded_files : List
+            List of uploaded file objects to be processed and ingested.
+
+        Raises
+        ------
+        CustomException
+            If any error occurs during the ingestion process.
         """
         try:
             documents: List[Document] = self.load_documents(uploaded_files)
