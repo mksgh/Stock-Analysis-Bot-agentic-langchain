@@ -1,6 +1,9 @@
+import sys
+sys.path.append("../")
+
 import yaml
 
-def load_config(config_path: str = None) -> dict:
+def load_config(config_path: str = r"C:\Users\mksgh\OneDrive - Vestas Wind Systems A S\Documents\Github\TradingBot-agentic-langchain\config\config.yaml" ) -> dict:
     """
     Loads the YAML configuration file from the specified path.
 
