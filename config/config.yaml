@@ -1,0 +1,37 @@
+model_provider:
+  provider: "azure" # Options: "google", "azure", "groq"
+
+vector_db:
+  groq:
+    index_name: "user-stock-data-index"
+    dimension: 768 # Dimension of the embedding vector
+  azure:
+    index_name: "user-stock-data-index-azure"
+    dimension: 1536 # Dimension of the embedding vector
+  google:
+    index_name: "user-stock-data-index"
+    dimension: 768 # Dimension of the embedding vector
+
+
+retriever:
+  top_k: 3
+  score_threshold: 0.5
+
+embedding_model:
+  google:
+    model_name: "textembedding-gecko@001"
+  azure:
+    model_name: "text-embedding-3-small"
+
+llm:
+  google:
+    model_name: "gemini-1.5-pro"
+  groq:
+    model_name: "deepseek-r1-distill-llama-70b"
+  azure:
+    model_name: "gpt-4o-test-app"
+    api_version: "2024-02-01"
+
+tools:
+  tavily:
+    max_results: 5
