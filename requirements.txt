@@ -1,0 +1,17 @@
+langchain
+langgraph
+polygon
+langchain_community
+langchain_google_genai
+streamlit
+fastapi[all]
+uvicorn
+langchain-pinecone
+pypdf
+pinecone
+langchain-groq
+langchain-tavily
+docx2txt
+langgraph-cli[inmem]
+# gnureadline
+#-e .
