@@ -1,4 +1,4 @@
-# 📈 Stock Market Research Bot - Agentic LangChain
+# 📈 Stock Market Analysis Bot - Agentic LangChain
 
 A modular, agentic chatbot platform for stock market research and document retrieval, built with FastAPI, Streamlit, LangChain, Pinecone, and various LLM/embedding providers.
 
