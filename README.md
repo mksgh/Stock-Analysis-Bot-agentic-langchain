@@ -2,6 +2,8 @@
 
 A modular, agentic chatbot platform for stock market research and document retrieval, built with FastAPI, Streamlit, LangChain, Pinecone, and various LLM/embedding providers.
 
+![image](https://github.com/user-attachments/assets/e05eeb38-220e-44f5-a1d5-f214d2782236)
+
 ---
 
 ## Features
